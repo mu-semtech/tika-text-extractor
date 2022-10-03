@@ -1,9 +1,13 @@
 FROM semtech/mu-python-template:2.0.0-beta.1
 LABEL maintainer="lennyb.0908@gmail.com"
 
+ENV LOGLEVEL="DEBUG"
+ENV PYTHONIOENCODING="utf8"
 
-ENV FILE_RESOURCE_BASE=http://mu.semte.ch/services/file-service/files/
-ENV MU_APPLICATION_FILE_STORAGE_PATH=files/toExtract/
-ENV MU_SPARQL_ENDPOINT=http://database:8890/sparql
-ENV MU_SPARQL_TIMEOUT=60
-ENV LOG_LEVEL=info
+
+# Install Java 11 for Tika
+RUN apt-get update && \
+    apt-get install -y openjdk-11-jre-headless && \
+    apt-get clean; 
+
+# ENV TIKA_SERVER_JAR="file:////tmp/tika-server-1-9.jar" 
