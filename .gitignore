@@ -1,0 +1,8 @@
+
+/tika-server
+
+docker-compose.override.yml
+
+.vscode
+.editorconfig
+.DS_Store
