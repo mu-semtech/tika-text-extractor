@@ -4,7 +4,7 @@
 """
 import os
 import logging
-logging.basicConfig(level = os.environ["LOGLEVEL"] if os.environ["LOGLEVEL"] else "WARNING")
+logging.basicConfig(level = os.environ["LOGLEVEL"])
 from flask import request
 
 import service

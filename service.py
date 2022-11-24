@@ -4,7 +4,7 @@
 """
 import os
 import logging
-logging.basicConfig(level = os.environ["LOGLEVEL"] if os.environ["LOGLEVEL"] else "WARNING")
+logging.basicConfig(level = os.environ["LOGLEVEL"])
 
 import tika #https://github.com/chrismattmann/tika
 tika.initVM()
@@ -27,6 +27,9 @@ def indexFile(uri):
 		logging.error(e)
 		return e
 	virtualFileURI = queryDataSource(uri)
+	if virtualFileURI == "":
+		logging.info(f"No Datasource found for {uri}. Skipping.")
+		return
 	result = saveContent(virtualFileURI, fileContent)
 	return result
 
@@ -102,6 +105,8 @@ def queryFileName(uri):
 		uri=sparql_escape_uri(uri)
 	)
 	query_result = query(query_string)['results']['bindings']
+	if(len(query_result) <= 0): 
+		return ""
 	fileName = query_result[0]['fileName']['value']
 	return fileName
 
@@ -123,6 +128,8 @@ def queryDataSource(uri):
 		uri=sparql_escape_uri(uri)
 	)
 	query_result = query(query_string)['results']['bindings']
+	if(len(query_result) <= 0): 
+		return ""
 	dataSource = query_result[0]['dataSource']['value']
 	return dataSource	
 
@@ -144,6 +151,8 @@ def queryContent(uri):
 		uri=sparql_escape_uri(uri)
 	)
 	query_result = query(query_string)['results']['bindings']
+	if(len(query_result) <= 0): 
+		return ""
 	content = query_result[0]['content']['value']
 	return content	
 
