@@ -4,7 +4,7 @@
 """
 import os
 import logging
-logging.basicConfig(level = os.environ["LOGLEVEL"])
+logging.basicConfig(level = os.environ.get("LOGLEVEL", "INFO"))
 
 import tika #https://github.com/chrismattmann/tika
 tika.initVM()
@@ -19,7 +19,12 @@ from escape_helpers import *
 	@params:
 	- uri: uri of a physical file
 """
-def indexFile(uri):
+def indexFile(uri, overwrite=False):
+	if not overwrite:
+		content = queryContent(uri)
+		if(content != ""):
+			logging.info(f'{uri} already indexed.')
+			return {}
 	path = uri.replace('share://', '/share/')
 	try:
 		fileContent = parser.from_file(path)["content"]
@@ -30,19 +35,32 @@ def indexFile(uri):
 	if virtualFileURI == "":
 		logging.info(f"No Datasource found for {uri}. Skipping.")
 		return
-	result = saveContent(virtualFileURI, fileContent)
+	
+	try:
+		result = saveContent(virtualFileURI, fileContent)
+		logging.info(f'{uri} successfully indexed.')
+	except Exception as e:
+		logging.error(e)
+		result = e
 	return result
 
 
 """ Index saved physical files 
 """                                                
-def indexAll():
+def indexAll(overwrite=False):
 	uris = queryFileURIs()
 	physicalURIs = [ i for i in uris if 'share://' in i ]
+	errors = []
 	for i in physicalURIs:
 		logging.info(f"INDEXING {i}")
-		indexFile(i)
-	return "success"
+		try:
+			indexFile(i, overwrite=overwrite)
+		except Exception as e:
+			logging.error(e)
+			errors.append(i)
+	return {
+		"errors": errors
+	}
 
 
 """ save text from a file into a triple store

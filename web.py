@@ -4,7 +4,11 @@
 """
 import os
 import logging
-logging.basicConfig(level = os.environ["LOGLEVEL"])
+logging.basicConfig(level = os.environ.get("LOGLEVEL", "INFO"))
+
+import requests
+import threading
+import time
 from flask import request
 
 import service
@@ -18,20 +22,6 @@ def indexFile():
 	body = request.get_json()
 	uri = body.get('uri')
 	result = service.indexFile(uri)
-	return {
-		"result": result
-	}
-
-
-""" Extract content and save it for all files
-"""
-@app.route("/index-all", methods=['POST'])
-def indexAll():
-	try:
-		result = service.indexAll()
-	except Exception as e:
-		logging.error(e)
-		return e
 	return {
 		"result": result
 	}
@@ -52,6 +42,20 @@ def delta():
 		if uri == '': 
 			raise Exception("No uri for physical files found. Can not extract content without physical file.")
 		result = service.indexFile(uri)
+	except Exception as e:
+		logging.error(e)
+		return e
+	return {
+		"result": result
+	}
+
+
+""" Extract content and save it for all files
+"""
+@app.route("/index-all", methods=['POST'])
+def indexAll():
+	try:
+		result = service.indexAll()
 	except Exception as e:
 		logging.error(e)
 		return e
