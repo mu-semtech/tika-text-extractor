@@ -1,8 +1,7 @@
 
 /tika-server
 /__pycache__
-
-docker-compose.override.yml
+deploy-image.sh
 
 .vscode
 .editorconfig
