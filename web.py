@@ -3,14 +3,7 @@
 	Created: 23 September 2022
 """
 import os
-import logging
-logging.basicConfig(level = os.environ.get("LOGLEVEL", "INFO"))
-
-import requests
-import threading
-import time
 from flask import request
-
 import service
 
 
@@ -21,10 +14,16 @@ import service
 def indexFile():
 	body = request.get_json()
 	uri = body.get('uri')
-	result = service.indexFile(uri)
-	return {
-		"result": result
-	}
+	try:
+		result = service.indexFile(uri)
+		return {
+			"result": result
+		}
+	except RuntimeError:
+		return {
+			"result": "Unable to start tika server. Please retry"
+		}
+
 
 
 """ receive a delta signal from the delta notifier service and save the extracted text into the triplestore
@@ -40,14 +39,18 @@ def delta():
 			if target_uri in i['subject']['value']:
 				uri = i['subject']['value']
 		if uri == '': 
-			raise Exception("No uri for physical files found. Can not extract content without physical file.")
+			return {
+				"result": "No uri for physical files found. Can not extract content without physical file."
+			}
 		result = service.indexFile(uri)
+		return {
+			"result": result
+		}
 	except Exception as e:
-		logging.error(e)
-		return e
-	return {
-		"result": result
-	}
+		return {
+			"result": e.__repr__()
+		}
+
 
 
 """ Extract content and save it for all files
@@ -56,9 +59,14 @@ def delta():
 def indexAll():
 	try:
 		result = service.indexAll()
+	except RuntimeError:
+		return {
+			"result": "Unable to start tika server. Please retry"
+		}
 	except Exception as e:
-		logging.error(e)
-		return e
+		return {
+			"result": e.__repr__()
+		}
 	return {
 		"result": result
 	}

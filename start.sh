@@ -1,7 +1,7 @@
 #! /usr/bin/env sh
 set -e
 
-# /app/ping-server.sh &>/dev/null &
+/app/ping-server.sh &>/dev/null &
 
 if [ $MODE = "development" ] ; then 
     exec python web.p

@@ -15,6 +15,9 @@ from helpers import query
 from escape_helpers import *
 
 
+CUSTOM_QUERY_PATH = os.environ.get("CUSTOM_QUERY_PATH", "")
+
+
 """ index physical file
 	@params:
 	- uri: uri of a physical file
@@ -24,43 +27,44 @@ def indexFile(uri, overwrite=False):
 		content = queryContent(uri)
 		if(content != ""):
 			logging.info(f'{uri} already indexed.')
-			return {}
+			return f'{uri} already indexed.'
+	
 	path = uri.replace('share://', '/share/')
 	try:
 		fileContent = parser.from_file(path)["content"]
-	except FileNotFoundError as e:
+	except Exception as e:
 		logging.error(e)
-		return e
+		raise e
 	virtualFileURI = queryDataSource(uri)
 	if virtualFileURI == "":
 		logging.info(f"No Datasource found for {uri}. Skipping.")
-		return
+		return f"No Datasource found for {uri}. Skipping."
 	
 	try:
-		result = saveContent(virtualFileURI, fileContent)
+		saveContent(virtualFileURI, fileContent)
 		logging.info(f'{uri} successfully indexed.')
+		return f'{uri} successfully indexed.'
 	except Exception as e:
 		logging.error(e)
-		result = e
-	return result
-
+		raise e
+	
 
 """ Index saved physical files 
 """                                                
 def indexAll(overwrite=False):
 	uris = queryFileURIs()
 	physicalURIs = [ i for i in uris if 'share://' in i ]
-	errors = []
+	skippedFiles = []
 	for i in physicalURIs:
 		logging.info(f"INDEXING {i}")
 		try:
 			indexFile(i, overwrite=overwrite)
-		except Exception as e:
-			logging.error(e)
-			errors.append(i)
-	return {
-		"errors": errors
-	}
+		except RuntimeError as e:
+			return "Runtime error"
+		except Exception:
+			skippedFiles.append(i)
+	logging.info("Finished")
+	return "Finished"
 
 
 """ save text from a file into a triple store
@@ -69,24 +73,35 @@ def indexAll(overwrite=False):
 	- content: extracted text to save 
 """
 def saveContent(uri, content, graph=os.environ.get("DEFAULT_GRAPH")):	
-	query_string = Template("""
-		PREFIX sioc: <http://rdfs.org/sioc/ns#>	
+	if(CUSTOM_QUERY_PATH != ""):
+		try: 
+			with open(CUSTOM_QUERY_PATH, "r") as customQuery:
+				s = customQuery.read()
+				query_template = Template(s)
+		except Exception as e:
+			logging.error(f'error class: {e.__class__}\nerror mesasage: {e}')
+			raise e
+	else:
+		query_template = Template("""
+			PREFIX sioc: <http://rdfs.org/sioc/ns#>	
 
-		DELETE {
-			GRAPH $graph {
-				$uri sioc:content ?o . 	
-			}		
-		}
-		INSERT { 
-			GRAPH $graph {
-				$uri sioc:content $content . 
-			} 
-		}"""
-	).substitute(
-		uri=sparql_escape_uri(uri),
-		content=sparql_escape_string(content),
-		graph=sparql_escape_uri(graph),
-	)
+			DELETE {
+				GRAPH $graph {
+					$uri sioc:content ?o . 	
+				}		
+			}
+			INSERT { 
+				GRAPH $graph {
+					$uri sioc:content $content . 
+				} 
+			}"""
+		)
+	logging.info(f'query template: {query_template.__repr__()}')
+	query_string = query_template.substitute(
+			uri=sparql_escape_uri(uri),
+			content=sparql_escape_string(content),
+			graph=sparql_escape_uri(graph),
+		)
 	query_result = query(query_string)
 	return query_result
 
@@ -146,7 +161,7 @@ def queryDataSource(uri):
 		uri=sparql_escape_uri(uri)
 	)
 	query_result = query(query_string)['results']['bindings']
-	if(len(query_result) <= 0): 
+	if(len(query_result) <= 0):
 		return ""
 	dataSource = query_result[0]['dataSource']['value']
 	return dataSource	
@@ -170,7 +185,7 @@ def queryContent(uri):
 	)
 	query_result = query(query_string)['results']['bindings']
 	if(len(query_result) <= 0): 
-		return ""
+		return "" 
 	content = query_result[0]['content']['value']
 	return content	
 
