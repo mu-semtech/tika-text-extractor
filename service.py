@@ -71,6 +71,8 @@ def indexAll(overwrite=False):
 	@params:
 	- uri: uri of the virtual file to save the text on
 	- content: extracted text to save 
+
+TODO: use a query parser.
 """
 def saveContent(uri, content, graph=os.environ.get("DEFAULT_GRAPH")):	
 	if(CUSTOM_QUERY_PATH != ""):

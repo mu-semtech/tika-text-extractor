@@ -6,6 +6,8 @@ import os
 from flask import request
 import service
 
+import logging
+logging.basicConfig(level = os.environ.get("LOGLEVEL", "INFO"))
 
 """ Extract text and save it in the triplestore
 	@filepath: path to the file relative from FILE_DIR
@@ -20,8 +22,14 @@ def indexFile():
 			"result": result
 		}
 	except RuntimeError:
+		logging.error(e)
 		return {
-			"result": "Unable to start tika server. Please retry"
+			"message": "Unable to start tika server. Please retry"
+		}
+	except Exception as e:
+		logging.error(e)
+		return {
+			"message": e
 		}
 
 
@@ -48,7 +56,7 @@ def delta():
 		}
 	except Exception as e:
 		return {
-			"result": e.__repr__()
+			"message": e
 		}
 
 
@@ -61,11 +69,11 @@ def indexAll():
 		result = service.indexAll()
 	except RuntimeError:
 		return {
-			"result": "Unable to start tika server. Please retry"
+			"message": "Unable to start tika server. Please retry"
 		}
 	except Exception as e:
 		return {
-			"result": e.__repr__()
+			"message": e
 		}
 	return {
 		"result": result

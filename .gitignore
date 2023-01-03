@@ -1,7 +1,7 @@
 
 /tika-server
 /__pycache__
-deploy-image.sh
+./deploy-image.sh
 
 .vscode
 .editorconfig
