@@ -9,6 +9,7 @@ import service
 import logging
 logging.basicConfig(level = os.environ.get("LOGLEVEL", "INFO"))
 
+
 """ Extract text and save it in the triplestore
 	@filepath: path to the file relative from FILE_DIR
 """
@@ -22,16 +23,33 @@ def indexFile():
 			"result": result
 		}
 	except RuntimeError:
-		logging.error(e)
+		logging.exception(e)
 		return {
 			"message": "Unable to start tika server. Please retry"
 		}
 	except Exception as e:
-		logging.error(e)
 		return {
-			"message": e
+			"message": e.message
 		}
 
+
+""" Extract content and save it for all files
+"""
+@app.route("/index-all", methods=['POST'])
+def indexAll():
+	try:
+		result = service.indexAll()
+	except RuntimeError:
+		return {
+			"message": e.message
+		}
+	except Exception as e:
+		return {
+			"message": e.message
+		}
+	return {
+		"result": result
+	}
 
 
 """ receive a delta signal from the delta notifier service and save the extracted text into the triplestore
@@ -56,25 +74,5 @@ def delta():
 		}
 	except Exception as e:
 		return {
-			"message": e
+			"message": e.message
 		}
-
-
-
-""" Extract content and save it for all files
-"""
-@app.route("/index-all", methods=['POST'])
-def indexAll():
-	try:
-		result = service.indexAll()
-	except RuntimeError:
-		return {
-			"message": "Unable to start tika server. Please retry"
-		}
-	except Exception as e:
-		return {
-			"message": e
-		}
-	return {
-		"result": result
-	}

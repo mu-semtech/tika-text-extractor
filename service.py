@@ -23,23 +23,27 @@ CUSTOM_QUERY_PATH = os.environ.get("CUSTOM_QUERY_PATH", "")
 	- uri: uri of a physical file
 """
 def indexFile(uri, overwrite=False):
-	if not overwrite:
-		content = queryContent(uri)
-		if(content != ""):
-			logging.info(f'{uri} already indexed.')
-			return f'{uri} already indexed.'
 	
-	path = uri.replace('share://', '/share/')
-	try:
-		fileContent = parser.from_file(path)["content"]
-	except Exception as e:
-		logging.error(e)
-		raise e
 	virtualFileURI = queryDataSource(uri)
 	if virtualFileURI == "":
 		logging.info(f"No Datasource found for {uri}. Skipping.")
 		return f"No Datasource found for {uri}. Skipping."
-	
+
+	if not overwrite:
+		content = queryContent(virtualFileURI)
+		if(content != ""):
+			logging.info(f'{uri} already indexed.')
+			return f'{uri} already indexed.'
+
+	path = uri.replace('share://', '/share/')
+	try:
+		fileContent = parser.from_file(path)["content"]
+	except FileNotFoundError as e:
+		logging.exception(e)
+	except Exception as e:
+		logging.exception(e)
+		raise e
+
 	try:
 		saveContent(virtualFileURI, fileContent)
 		logging.info(f'{uri} successfully indexed.')
@@ -81,7 +85,7 @@ def saveContent(uri, content, graph=os.environ.get("DEFAULT_GRAPH")):
 				s = customQuery.read()
 				query_template = Template(s)
 		except Exception as e:
-			logging.error(f'error class: {e.__class__}\nerror mesasage: {e}')
+			logging.exception(e)
 			raise e
 	else:
 		query_template = Template("""

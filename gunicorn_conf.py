@@ -43,5 +43,3 @@ log_data = {
     "port": port,
 }
 print(json.dumps(log_data))
-
-
